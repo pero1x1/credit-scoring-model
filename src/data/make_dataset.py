@@ -1,4 +1,3 @@
-
 import argparse
 from pathlib import Path
 import pandas as pd
@@ -6,11 +5,13 @@ from sklearn.model_selection import train_test_split
 
 TARGET_COL = "default.payment.next.month"
 
+
 def load_raw(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path)
     if TARGET_COL not in df.columns:
         raise ValueError(f"Не найдена целевая колонка '{TARGET_COL}'")
     return df
+
 
 def basic_clean(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
@@ -22,16 +23,26 @@ def basic_clean(df: pd.DataFrame) -> pd.DataFrame:
     df = df.drop_duplicates()
     return df
 
-def split_and_save(df: pd.DataFrame, out_dir: Path, test_size: float = 0.2, seed: int = 42):
+
+def split_and_save(
+    df: pd.DataFrame, out_dir: Path, test_size: float = 0.2, seed: int = 42
+):
     X = df.drop(columns=["target"])
     y = df["target"]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=seed, stratify=y)
-    train = X_train.copy(); train["target"] = y_train.values
-    test  = X_test.copy();  test["target"]  = y_test.values
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=seed, stratify=y
+    )
+    train = X_train.copy()
+    train["target"] = y_train.values
+    test = X_test.copy()
+    test["target"] = y_test.values
     out_dir.mkdir(parents=True, exist_ok=True)
     train.to_csv(out_dir / "train.csv", index=False)
     test.to_csv(out_dir / "test.csv", index=False)
-    print(f"Saved: {out_dir/'train.csv'} ({train.shape}), {out_dir/'test.csv'} ({test.shape})")
+    print(
+        f"Saved: {out_dir/'train.csv'} ({train.shape}), {out_dir/'test.csv'} ({test.shape})"
+    )
+
 
 def main(raw_path: str, out_dir: str):
     raw_path = Path(raw_path)
@@ -39,6 +50,7 @@ def main(raw_path: str, out_dir: str):
     df = load_raw(raw_path)
     df = basic_clean(df)
     split_and_save(df, out_dir)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
