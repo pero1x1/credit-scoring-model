@@ -37,12 +37,16 @@ def split_and_save(
     test = X_test.copy()
     test["target"] = y_test.values
     out_dir.mkdir(parents=True, exist_ok=True)
-    train.to_csv(out_dir / "train.csv", index=False)
-    test.to_csv(out_dir / "test.csv", index=False)
+    train_path = out_dir / "train.csv"
+    test_path = out_dir / "test.csv"
+    train.to_csv(train_path, index=False)
+    test.to_csv(test_path, index=False)
     print(
     f"Saved train: {train_path} ({train.shape}), "
     f"test: {test_path} ({test.shape})"
     )
+
+    
 
 
 def main(raw_path: str, out_dir: str):
