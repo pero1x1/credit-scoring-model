@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Lint (flake8)
+        run: flake8 src tests
+
+      - name: Format check (black)
+        run: black --check src tests
+
+      - name: Run unit tests (pytest)
+        run: pytest -q
+
+      - name: Data validation (Pandera) on tiny sample
+        run: |
+          python - << 'PY'
+          import pandas as pd
+          from pathlib import Path
+          Path("data/processed").mkdir(parents=True, exist_ok=True)
+          cols = ["ID","LIMIT_BAL","SEX","EDUCATION","MARRIAGE","AGE",
+                  "PAY_0","PAY_2","PAY_3","PAY_4","PAY_5","PAY_6",
+                  "BILL_AMT1","BILL_AMT2","BILL_AMT3","BILL_AMT4","BILL_AMT5","BILL_AMT6",
+                  "PAY_AMT1","PAY_AMT2","PAY_AMT3","PAY_AMT4","PAY_AMT5","PAY_AMT6","target"]
+          row = [1,20000,1,2,1,30,0,0,0,0,0,0, 0,0,0,0,0,0, 0,0,0,0,0,0, 0]
+          df = pd.DataFrame([row, row], columns=cols)
+          df.to_csv("data/processed/train.csv", index=False)
+          df.to_csv("data/processed/test.csv", index=False)
+          from src.data.quality_report import main
+          main("data/processed/train.csv","data/processed/test.csv","data/processed/data_quality_report.json")
+          print("Validation OK")
+          PY

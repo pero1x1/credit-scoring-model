@@ -1,0 +1,7 @@
+mlruns/
+notebooks/
+.ipynb_checkpoints/
+*.ipynb
+data/processed/*.json
+models/*.pkl
+models/*.png
