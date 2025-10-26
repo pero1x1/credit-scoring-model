@@ -78,7 +78,6 @@ def main(
 
 
 if __name__ == "__main__":
-    import argparse
 
     p = argparse.ArgumentParser()
     p.add_argument("--train", required=True)
