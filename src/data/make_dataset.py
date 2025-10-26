@@ -40,7 +40,8 @@ def split_and_save(
     train.to_csv(out_dir / "train.csv", index=False)
     test.to_csv(out_dir / "test.csv", index=False)
     print(
-    print("Saved: {train_path} ({train.shape}), {test_path} ({test.shape})")
+    f"Saved train: {train_path} ({train.shape}), "
+    f"test: {test_path} ({test.shape})"
     )
 
 
