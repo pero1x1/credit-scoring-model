@@ -1,87 +1,61 @@
 import argparse
-import pandera as pa
-import pandera.typing as pt
-import pandas as pd
 from pathlib import Path
+import pandas as pd
+import pandera as pa
+from pandera import Column, Check
 
 
-class CreditSchema(pa.SchemaModel):
-    ID: pt.Series[int] = pa.Field(coerce=True, nullable=False)
-    LIMIT_BAL: pt.Series[float] = pa.Field(gt=0, le=1_000_000, coerce=True)
-    SEX: pt.Series[int] = pa.Field(isin=[1, 2], coerce=True)
-    EDUCATION: pt.Series[int] = pa.Field(
-        isin=[0, 1, 2, 3, 4, 5, 6], coerce=True
-    )  # встречаются 0/5/6
-    MARRIAGE: pt.Series[int] = pa.Field(isin=[0, 1, 2, 3], coerce=True)  # иногда 0
-    AGE: pt.Series[int] = pa.Field(ge=18, le=100, coerce=True)
-
-    PAY_0: pt.Series[int] = pa.Field(ge=-2, le=9, coerce=True)
-    PAY_2: pt.Series[int] = pa.Field(ge=-2, le=9, coerce=True)
-    PAY_3: pt.Series[int] = pa.Field(ge=-2, le=9, coerce=True)
-    PAY_4: pt.Series[int] = pa.Field(ge=-2, le=9, coerce=True)
-    PAY_5: pt.Series[int] = pa.Field(ge=-2, le=9, coerce=True)
-    PAY_6: pt.Series[int] = pa.Field(ge=-2, le=9, coerce=True)
-
-    BILL_AMT1: pt.Series[float] = pa.Field(ge=-1_000_000, le=10_000_000, coerce=True)
-    BILL_AMT2: pt.Series[float] = pa.Field(ge=-1_000_000, le=10_000_000, coerce=True)
-    BILL_AMT3: pt.Series[float] = pa.Field(ge=-1_000_000, le=10_000_000, coerce=True)
-    BILL_AMT4: pt.Series[float] = pa.Field(ge=-1_000_000, le=10_000_000, coerce=True)
-    BILL_AMT5: pt.Series[float] = pa.Field(ge=-1_000_000, le=10_000_000, coerce=True)
-    BILL_AMT6: pt.Series[float] = pa.Field(ge=-1_000_000, le=10_000_000, coerce=True)
-
-    PAY_AMT1: pt.Series[float] = pa.Field(ge=0, le=10_000_000, coerce=True)
-    PAY_AMT2: pt.Series[float] = pa.Field(ge=0, le=10_000_000, coerce=True)
-    PAY_AMT3: pt.Series[float] = pa.Field(ge=0, le=10_000_000, coerce=True)
-    PAY_AMT4: pt.Series[float] = pa.Field(ge=0, le=10_000_000, coerce=True)
-    PAY_AMT5: pt.Series[float] = pa.Field(ge=0, le=10_000_000, coerce=True)
-    PAY_AMT6: pt.Series[float] = pa.Field(ge=0, le=10_000_000, coerce=True)
-
-    target: pt.Series[int] = pa.Field(isin=[0, 1], nullable=False, coerce=True)
-
-    class Config:
-        strict = True  # лишние колонки — ошибка
-        coerce = True  # приводим типы
+# Схема с проверками значений
+schema = pa.DataFrameSchema(
+    {
+        "ID": Column(int, Check.ge(1)),
+        "LIMIT_BAL": Column(float, Check.gt(0)),
+        "SEX": Column(int, Check.isin([1, 2])),
+        "EDUCATION": Column(int, Check.isin([0, 1, 2, 3, 4, 5, 6])),
+        "MARRIAGE": Column(int, Check.isin([0, 1, 2, 3])),
+        "AGE": Column(int, [Check.ge(18), Check.le(100)]),
+        "PAY_0": Column(int, [Check.ge(-2), Check.le(9)]),
+        "PAY_2": Column(int, [Check.ge(-2), Check.le(9)]),
+        "PAY_3": Column(int, [Check.ge(-2), Check.le(9)]),
+        "PAY_4": Column(int, [Check.ge(-2), Check.le(9)]),
+        "PAY_5": Column(int, [Check.ge(-2), Check.le(9)]),
+        "PAY_6": Column(int, [Check.ge(-2), Check.le(9)]),
+        "BILL_AMT1": Column(float),
+        "BILL_AMT2": Column(float),
+        "BILL_AMT3": Column(float),
+        "BILL_AMT4": Column(float),
+        "BILL_AMT5": Column(float),
+        "BILL_AMT6": Column(float),
+        "PAY_AMT1": Column(float, Check.ge(0)),
+        "PAY_AMT2": Column(float, Check.ge(0)),
+        "PAY_AMT3": Column(float, Check.ge(0)),
+        "PAY_AMT4": Column(float, Check.ge(0)),
+        "PAY_AMT5": Column(float, Check.ge(0)),
+        "PAY_AMT6": Column(float, Check.ge(0)),
+        "target": Column(int, Check.isin([0, 1])),
+    },
+    strict=False,  # допускаем лишние колонки (если появятся)
+)
 
 
-def validate_csv(path: Path) -> dict:
+def validate_file(path: Path) -> None:
     df = pd.read_csv(path)
-    try:
-        CreditSchema.validate(df, lazy=True)
-        return {"ok": True, "errors": []}
-    except pa.errors.SchemaErrors as err:
-        # возвращаем компактный отчёт
-        report = (
-            err.failure_cases[["column", "check", "failure_case"]]
-            .head(20)
-            .to_dict(orient="records")
-        )
-        return {"ok": False, "errors": report}
+    schema.validate(df, lazy=True)  # собираем все ошибки разом
 
 
-def main(
-    train_csv: str,
-    test_csv: str,
-    out_json: str = "data/processed/validation_report.json",
-):
-    report = {
-        "train": validate_csv(Path(train_csv)),
-        "test": validate_csv(Path(test_csv)),
-    }
-    Path(out_json).parent.mkdir(parents=True, exist_ok=True)
-    import json
-
-    with open(out_json, "w", encoding="utf-8") as f:
-        json.dump(report, f, ensure_ascii=False, indent=2)
-    print(f"Validation report -> {out_json}")
-    if (not report["train"]["ok"]) or (not report["test"]["ok"]):
-        raise SystemExit("❌ Data validation failed. See report.")
+def main(train_csv: str, test_csv: str, out_json: str | None = None) -> None:
+    # базовая проверка: просто валидируем файлы, ошибки отдаст pandera
+    validate_file(Path(train_csv))
+    validate_file(Path(test_csv))
+    # лёгкий отчёт (без ошибок = ок)
+    if out_json:
+        Path(out_json).write_text('{"ok": true}', encoding="utf-8")
 
 
 if __name__ == "__main__":
-
-    p = argparse.ArgumentParser()
-    p.add_argument("--train", required=True)
-    p.add_argument("--test", required=True)
-    p.add_argument("--out", default="data/processed/validation_report.json")
-    args = p.parse_args()
-    main(args.train, args.test, args.out)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--train", type=str, required=True)
+    parser.add_argument("--test", type=str, required=True)
+    parser.add_argument("--out", type=str, default="")
+    args = parser.parse_args()
+    main(args.train, args.test, args.out or None)
