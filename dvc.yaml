@@ -1,0 +1,48 @@
+stages:
+  prepare:
+    cmd: >-
+      "C:\Users\USER\anaconda3\python.exe"
+      -m src.data.make_dataset
+      --raw data/raw/UCI_Credit_Card.csv
+      --out data/processed
+    deps:
+      - src/data/make_dataset.py
+      - data/raw/UCI_Credit_Card.csv
+    outs:
+      - data/processed/train.csv
+      - data/processed/test.csv
+
+  quality:
+    cmd: >-
+      "C:\Users\USER\anaconda3\python.exe"
+      -m src.data.quality_report
+      --train data/processed/train.csv
+      --test data/processed/test.csv
+      --out data/processed/data_quality_report.json
+    deps:
+      - src/data/quality_report.py
+      - data/processed/train.csv
+      - data/processed/test.csv
+    outs:
+      - data/processed/data_quality_report.json:
+          cache: false
+
+  train:
+    cmd: >-
+      "C:\Users\USER\anaconda3\python.exe"
+      -m src.models.train
+      --data_dir data/processed
+      --models_dir models
+      --mlruns_dir mlruns
+    deps:
+      - src/models/train.py
+      - src/models/pipeline.py
+      - data/processed/train.csv
+      - data/processed/test.csv
+    outs:
+      - models/credit_default_model.pkl
+      - models/roc_curve.png:
+          cache: false
+    metrics:
+      - data/processed/metrics.json:
+          cache: false

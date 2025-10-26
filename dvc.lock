@@ -1,0 +1,77 @@
+schema: '2.0'
+stages:
+  prepare:
+    cmd: '"C:\Users\USER\anaconda3\python.exe" -m src.data.make_dataset --raw data/raw/UCI_Credit_Card.csv
+      --out data/processed'
+    deps:
+    - path: data/raw/UCI_Credit_Card.csv
+      hash: md5
+      md5: 940b416bb13a9b24bb5c9e1589284005
+      size: 2862995
+    - path: src/data/make_dataset.py
+      hash: md5
+      md5: d6c729d179a141473a6ab5720b47ca9a
+      size: 1865
+    outs:
+    - path: data/processed/test.csv
+      hash: md5
+      md5: f69a5bd4345bc9039652e64dd2383fb1
+      size: 735839
+    - path: data/processed/train.csv
+      hash: md5
+      md5: 87a43e26fd3632cba7b13e5ee2bc6d07
+      size: 2941548
+  quality:
+    cmd: '"C:\Users\USER\anaconda3\python.exe" -m src.data.quality_report --train
+      data/processed/train.csv --test data/processed/test.csv --out data/processed/data_quality_report.json'
+    deps:
+    - path: data/processed/test.csv
+      hash: md5
+      md5: f69a5bd4345bc9039652e64dd2383fb1
+      size: 735839
+    - path: data/processed/train.csv
+      hash: md5
+      md5: 87a43e26fd3632cba7b13e5ee2bc6d07
+      size: 2941548
+    - path: src/data/quality_report.py
+      hash: md5
+      md5: f06b0fba1481a0901f369bcc2557bac3
+      size: 4910
+    outs:
+    - path: data/processed/data_quality_report.json
+      hash: md5
+      md5: 1c2f691eb88438be46452843f020dcd3
+      size: 3810
+  train:
+    cmd: '"C:\Users\USER\anaconda3\python.exe" -m src.models.train --data_dir data/processed
+      --models_dir models --mlruns_dir mlruns'
+    deps:
+    - path: data/processed/test.csv
+      hash: md5
+      md5: f69a5bd4345bc9039652e64dd2383fb1
+      size: 735839
+    - path: data/processed/train.csv
+      hash: md5
+      md5: 87a43e26fd3632cba7b13e5ee2bc6d07
+      size: 2941548
+    - path: src/models/pipeline.py
+      hash: md5
+      md5: 0360e5062cfa65675c17b1ac2b3e936a
+      size: 1289
+    - path: src/models/train.py
+      hash: md5
+      md5: 5ffaa8972d59c3a70fb09b0c1742080a
+      size: 4209
+    outs:
+    - path: data/processed/metrics.json
+      hash: md5
+      md5: 3326ada7c53c63ec42f7e9b92cad0b34
+      size: 151
+    - path: models/credit_default_model.pkl
+      hash: md5
+      md5: 4ddaf97dd37ea6bfc9bab6511be5a72e
+      size: 437691
+    - path: models/roc_curve.png
+      hash: md5
+      md5: 94594eee13aca9566dfc70329d018541
+      size: 24874
