@@ -1,8 +1,7 @@
 schema: '2.0'
 stages:
   prepare:
-    cmd: '"C:\Users\USER\anaconda3\python.exe" -m src.data.make_dataset --raw data/raw/UCI_Credit_Card.csv
-      --out data/processed'
+    cmd: 'python -m src.data.make_dataset --raw data/raw/UCI_Credit_Card.csv --out data/processed'
     deps:
     - path: data/raw/UCI_Credit_Card.csv
       hash: md5
@@ -21,9 +20,28 @@ stages:
       hash: md5
       md5: 87a43e26fd3632cba7b13e5ee2bc6d07
       size: 2941548
+  validate:
+    cmd: 'python -m src.data.validation --train data/processed/train.csv --test data/processed/test.csv --out data/processed/validation_report.json'
+    deps:
+    - path: data/processed/test.csv
+      hash: md5
+      md5: f69a5bd4345bc9039652e64dd2383fb1
+      size: 735839
+    - path: data/processed/train.csv
+      hash: md5
+      md5: 87a43e26fd3632cba7b13e5ee2bc6d07
+      size: 2941548
+    - path: src/data/validation.py
+      hash: md5
+      md5: 64286b7dca3834ba2e00a249c76c69bd
+      size: 2434
+    outs:
+    - path: data/processed/validation_report.json
+      hash: md5
+      md5: fb50bf98d7d4137b4b4604ae138bc57c
+      size: 12
   quality:
-    cmd: '"C:\Users\USER\anaconda3\python.exe" -m src.data.quality_report --train
-      data/processed/train.csv --test data/processed/test.csv --out data/processed/data_quality_report.json'
+    cmd: 'python -m src.data.quality_report --train data/processed/train.csv --test data/processed/test.csv --out data/processed/data_quality_report.json'
     deps:
     - path: data/processed/test.csv
       hash: md5
@@ -43,8 +61,7 @@ stages:
       md5: 1c2f691eb88438be46452843f020dcd3
       size: 3810
   train:
-    cmd: '"C:\Users\USER\anaconda3\python.exe" -m src.models.train --data_dir data/processed
-      --models_dir models --mlruns_dir mlruns'
+    cmd: 'python -m src.models.train --data_dir data/processed --models_dir models --mlruns_dir mlruns'
     deps:
     - path: data/processed/test.csv
       hash: md5

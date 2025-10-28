@@ -31,6 +31,9 @@ def basic_clean(df: pd.DataFrame) -> pd.DataFrame:
     # Уберём дубли строк
     df = df.drop_duplicates()
 
+    if "ID" in df.columns:
+        df = df.drop_duplicates(subset=["ID"])
+
     return df
 
 
