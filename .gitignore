@@ -2,6 +2,9 @@ mlruns/
 notebooks/
 .ipynb_checkpoints/
 *.ipynb
+__pycache__/
+*.py[cod]
+.pytest_cache/
 data/processed/*.json
 models/*.pkl
 models/*.png
